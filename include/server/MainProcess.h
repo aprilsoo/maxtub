@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:50
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-14 14:39:41
+ * @LastEditTime: 2023-07-14 15:05:21
  * @FilePath: /maxtub/include/server/MainProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -22,6 +22,12 @@ using namespace std;
 
 class MainProcess{
   private:
+    struct Node{
+      int idx;
+      int *pos;
+      int pid;
+    };
+    
     int socket_fd;
     int process_num;
     int trigger;
@@ -30,10 +36,12 @@ class MainProcess{
     int protocol;
     char *ip;
     struct sockaddr_in sockaddr;
-    vector<pair<int,int*> > addrs;
+    
+    vector<MainProcess::Node> addrs;
     list<FollowProcess*> follows;
 
   public:
+    
     enum TRIGGER{
       ET=0,
       LT
@@ -82,8 +90,9 @@ class MainProcess{
 
       for(int i=0;i<process_num;i++){
         int *pos = new int;
-        addrs.push_back({i,pos});
-        FollowProcess.Instance();
+        
+        int pid = FollowProcess::Instance() -> follow_process_start(socket_fd,pos,socket_fd);
+        addrs.push_back({i,pos,pid});
       }
     }
 

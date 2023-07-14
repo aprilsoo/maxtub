@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:50
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-13 15:09:48
+ * @LastEditTime: 2023-07-14 14:39:41
  * @FilePath: /maxtub/include/server/MainProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -30,7 +30,7 @@ class MainProcess{
     int protocol;
     char *ip;
     struct sockaddr_in sockaddr;
-
+    vector<pair<int,int*> > addrs;
     list<FollowProcess*> follows;
 
   public:
@@ -63,6 +63,8 @@ class MainProcess{
     ip(ip_)
     {}
     
+    /// @brief 
+    /// @return 成功返回1 失败返回-1 
     int start(){
       if(init_socket_fd() < 0){
         return -1;
@@ -78,8 +80,10 @@ class MainProcess{
         return -1;
       }
 
-      for(int i=1;i<=process_num;i++){
-        follows.push_back(new FollowProcess());
+      for(int i=0;i<process_num;i++){
+        int *pos = new int;
+        addrs.push_back({i,pos});
+        FollowProcess.Instance();
       }
     }
 

@@ -89,10 +89,7 @@ class MainProcess{
       }
 
       for(int i=0;i<process_num;i++){
-        int *pos = new int;
-        
-        int pid = FollowProcess::Instance() -> follow_process_start(socket_fd,pos,socket_fd);
-        addrs.push_back({i,pos,pid});
+        int pid = FollowProcess::Instance() -> follow_process_start(i,socket_fd,pos,socket_fd);
       }
     }
 

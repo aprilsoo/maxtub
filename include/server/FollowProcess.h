@@ -50,7 +50,11 @@ class FollowProcess{
 
     static void run(){
       for(;;){
-        
+        // 抢锁
+        // 注册到epoll
+        // 优先级
+        // for
+        // 
       }
     }
 };

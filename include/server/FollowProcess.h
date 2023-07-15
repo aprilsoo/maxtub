@@ -8,58 +8,97 @@
  */
 #pragma once
 
-#include"server/MainProcess.h"
-#include<bits/stdc++.h>
-#include<mutex>
+#include <bits/stdc++.h>
+#include <mutex>
+#include <assert.h>
 #include <memory>
+#include <sys/mman.h>
+
+#include "EpollControl.h"
 
 class FollowProcess{
   private:
-    static int socket_fd;
-    static int* pos;
-    static int id;
-    static FollowProcess *instance;
-    static once_flag FollowProcess_once_flag;
-
-    FollowProcess(){}
-    ~FollowProcess(){}
+    int listen_fd;
+    int* pos = nullptr;
+    bool isClose_;
+    int id_;
+    int *share_addr;
+    std::unique_ptr<EpollControl> epoller_;
+    std::vector<epoll_event> aevent_;
   public:
-    
-    static FollowProcess* Instance(){ 
-      std::call_once(FollowProcess_once_flag,[&]{
-        instance = new FollowProcess();
-      });
-      
-      return instance;
+
+    FollowProcess(
+      int sock_fd,
+      int id,
+      int *share_
+      ):
+      epoller_(new EpollControl(20,30)),
+      listen_fd(sock_fd), pos(nullptr), 
+      id_(id), isClose_(false),share_addr(share_)
+    {
     }
-    
-    static int follow_process_start(
-      int id_,
-      int * pos_,
-      int socket_fd_
-    ){
-      int pid = fork();
-      if(pid != 0){
-          return pid;
+    ~FollowProcess(){}
+
+    void follow_process_start(){
+      uint32_t events = EPOLLIN;
+      epoller_->epoll_control(events,listen_fd,EPOLL_CTL_ADD);
+      // 读写锁
+      while(!isClose_){
+        // 抢锁
+        if(share_addr[0] == -1){
+
+        }
+        int clock = share_addr[0];
+        int nums = epoller_->epoll_wait(aevent_);
+        if(clock == id_){        
+          for(int i = 0;i < nums;i++){
+            int fd = epoller_->GetEventFd(i);
+            if(fd == listen_fd){
+              deal_listen_();
+            }
+          
+          }
+          share_addr[0] = -1;
+        } else {
+           for(int i = 0;i < nums;i++){
+            int fd = epoller_->GetEventFd(i);
+            uint32_t events = epoller_->GetEvent(i);
+            if(fd == listen_fd){
+              continue;
+            }else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
+                assert(users_.count(fd) > 0);
+                close_conn_(&users_[fd]);
+            }
+            else if(events & EPOLLIN) {
+                assert(users_.count(fd) > 0);
+                deal_read_(&users_[fd]);
+            }
+            else if(events & EPOLLOUT) {
+                assert(users_.count(fd) > 0);
+                deal_write_(&users_[fd]);
+            } else {
+                LOG_ERROR("Unexpected event");
+            }
+          }         
+        }
+
       }
-      run();
-      pos = pos_;
-      socket_fd = socket_fd_;
-      id = id_;
+
     }
 
-    static void run(){
-      for(;;){
-        // 抢锁
-        // 注册到epoll
-        // 优先级
-        // for
-        // 
-      }
+    void deal_listen_(){
+
+    }
+
+    void close_conn_(){
+
+    }
+
+    void deal_read_(){
+
+    }
+
+    void deal_write_(){
+
     }
 };
-
-static FollowProcess * instance = nullptr;
-static int socket_fd = 0;
-static int* pos = nullptr;
-static int id = 0;

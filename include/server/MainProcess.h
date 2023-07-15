@@ -29,16 +29,20 @@ class MainProcess{
     };
     
     int socket_fd;
+    char* path_;
     int process_num;
     int trigger;
     int socket_family;
     int port;
     int protocol;
     char *ip;
+    FollowProcess *follow_process_ptr_;
+    
     struct sockaddr_in sockaddr;
     
     vector<MainProcess::Node> addrs;
     list<FollowProcess*> follows;
+    vector<pid_t> pids;
 
   public:
     
@@ -69,7 +73,10 @@ class MainProcess{
     port(port_),
     protocol(protocol_),
     ip(ip_)
-    {}
+    {
+      path_ = getcwd(nullptr, 256);
+      assert(path_);
+    }
     
     /// @brief 
     /// @return 成功返回1 失败返回-1 
@@ -88,8 +95,31 @@ class MainProcess{
         return -1;
       }
 
+      /// 共享内存
+      // int fd = open(share_file_, O_RDWR | O_CREAT, 00777);
+      // int len = lseek(fd, 0, SEEK_END);
+      int *share_ = (int *)mmap(NULL, sizeof(int32_t), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
+      share_[0] = -1;
+      /// 创建多进程
+      int pid = -1;
+      int id = -1;
       for(int i=0;i<process_num;i++){
-        int pid = FollowProcess::Instance() -> follow_process_start(i,socket_fd,pos,socket_fd);
+          id = i;
+          pid = fork();
+          if(pid <= 0) {
+            break;
+          }
+          pids.push_back(pid);
+      }
+
+      if(pid < 0){
+        perror("error");
+      } else if(pid == 0) {
+        //子进程
+        follow_process_ptr_ = new FollowProcess(socket_fd, id, share_);
+        follow_process_ptr_->follow_process_start();
+      } else if(pid > 0) {
+        //父进程        
       }
     }
 

@@ -24,11 +24,7 @@ class FollowProcess{
     int* pos = nullptr;
     bool isClose_;
     int id_;
-    int *share_addr;
-    sem_t *sem_read;
-    sem_t *sem_write;
-    sem_t *sem_count;
-    int process_num;
+    int lock_fd_;
 
     std::unique_ptr<EpollControl> epoller_;
     std::vector<epoll_event> aevent_;
@@ -37,20 +33,12 @@ class FollowProcess{
     FollowProcess(
       int sock_fd,
       int id,
-      int shared_memory_id,
-      sem_t *sem_read_,
-      sem_t *sem_write_,
-      sem_t *read_count_,
-      int p_num
+      int lock_fd
       ):
       epoller_(new EpollControl(20,30)),
       listen_fd(sock_fd), pos(nullptr), 
-      id_(id), isClose_(false),sem_read(sem_read_),
-      sem_write(sem_write_),sem_count(read_count_),process_num(p_num)
+      id_(id), isClose_(false),lock_fd_(lock_fd)
     {
-      // 连接共享内存
-      share_addr = static_cast<int*>(shmat(shared_memory_id, nullptr, 0));
-      srand(time(NULL));
     }
     ~FollowProcess(){}
 
@@ -59,13 +47,12 @@ class FollowProcess{
       epoller_->epoll_control(events,listen_fd,EPOLL_CTL_ADD);  
 
       while(!isClose_){
-        //读操作
-        read_wait();
-        int choice_ = *share_addr;
-        read_post();
-        //
+        //尝试加锁
+        int ret = flock(lock_fd_, LOCK_EX | LOCK_NB);
         int nums = epoller_->epoll_wait(aevent_);
-        if(choice_ == id_){        
+
+        //拿到锁
+        if(ret != -1){        
           for(int i = 0;i < nums;i++){
             int fd = epoller_->GetEventFd(i);
             if(fd == listen_fd){
@@ -73,10 +60,7 @@ class FollowProcess{
             }
           
           }
-          sem_wait(sem_write);
-          *share_addr = rand()%process_num;
-          sem_post(sem_write);
-        } else {
+        } else { // 未拿到锁
            for(int i = 0;i < nums;i++){
             int fd = epoller_->GetEventFd(i);
             uint32_t events = epoller_->GetEvent(i);
@@ -101,30 +85,6 @@ class FollowProcess{
 
       }
 
-    }
-
-    void read_wait(){
-        // 读wait
-        sem_wait(sem_read);
-        int read_count;
-        sem_getvalue(sem_count,&read_count);
-        if(read_count == 0){
-          sem_wait(sem_write);
-        }
-        sem_post(sem_count);
-        sem_post(sem_read);
-    }
-
-    void read_post(){
-        // 读post
-        sem_wait(sem_read);
-        sem_wait(sem_count);
-        int read_count;
-        sem_getvalue(sem_count,&read_count);
-        if(read_count == 0){
-          sem_post(sem_write);
-        }
-        sem_post(sem_read);
     }
 
     void deal_listen_(){

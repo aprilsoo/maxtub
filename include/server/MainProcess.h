@@ -44,10 +44,8 @@ class MainProcess{
     int protocol;
     char *ip;
     FollowProcess *follow_process_ptr_;
-    // 共享内存大小
-    const int shared_memory_size = sizeof(int);
-    // 共享内存的key值
-    const key_t shared_memory_key = 1234;
+    
+    string filename_ = "lockfile.txt";
     
     struct sockaddr_in sockaddr;
     
@@ -106,40 +104,10 @@ class MainProcess{
         return -1;
       }
 
-      // 创建共享内存
-      int shared_memory_id = shmget(shared_memory_key, shared_memory_size, IPC_CREAT | 0666);
-      if (shared_memory_id == -1) {
-          std::cerr << "Failed to create shared memory: " << strerror(errno) << std::endl;
-          return 1;
-      }
-
-      // 连接共享内存
-      void* shared_memory = shmat(shared_memory_id, nullptr, 0);
-      if (shared_memory == (void*)-1) {
-          std::cerr << "Failed to attach shared memory: " << strerror(errno) << std::endl;
-          return 1;
-      }
-
-      // 初始化共享数据
-      int* share_ = static_cast<int*>(shared_memory);
-      *share_ = 0;
-
-
-      // 创建并初始化信号量
-      sem_t* sem_read = sem_open("/read_semaphare", O_CREAT | O_EXCL, 0644, 1);
-      if (sem_read == SEM_FAILED) {
-          std::cerr << "Failed to create semaphore: " << strerror(errno) << std::endl;
-          return 1;
-      }
-      sem_t* sem_write = sem_open("/write_semaphare", O_CREAT | O_EXCL, 0644, 1);
-      if (sem_read == SEM_FAILED) {
-          std::cerr << "Failed to create semaphore: " << strerror(errno) << std::endl;
-          return 1;
-      }
-      sem_t* read_count = sem_open("/read_count", O_CREAT | O_EXCL, 0644, 0);
-      if (sem_read == SEM_FAILED) {
-          std::cerr << "Failed to create semaphore: " << strerror(errno) << std::endl;
-          return 1;
+      int lock_fd = open(filename_.c_str(), O_RDWR | O_CREAT, 0644);
+      if (lock_fd == -1) {
+        std::cerr << "Failed to open file." << std::endl;
+        exit(-1);
       }
 
       // 创建多进程
@@ -158,7 +126,7 @@ class MainProcess{
         perror("error");
       } else if(pid == 0) {
         //子进程
-        follow_process_ptr_ = new FollowProcess(socket_fd, id, shared_memory_id, sem_read, sem_write, read_count,process_num);
+        follow_process_ptr_ = new FollowProcess(socket_fd, id, lock_fd);
         follow_process_ptr_->follow_process_start();
       } else if(pid > 0) {
         //父进程        

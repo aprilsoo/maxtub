@@ -58,8 +58,8 @@ class FollowProcess{
             if(fd == listen_fd){
               deal_listen_();
             }
-          
           }
+          flock(lock_fd_, LOCK_UN);
         } else { // 未拿到锁
            for(int i = 0;i < nums;i++){
             int fd = epoller_->GetEventFd(i);

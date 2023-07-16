@@ -17,6 +17,7 @@
 #include <sys/file.h>
 #include <ctime>
 #include "EpollControl.h"
+#include "HttpConn.h"
 
 class FollowProcess{
   private:
@@ -25,9 +26,11 @@ class FollowProcess{
     bool isClose_;
     int id_;
     int lock_fd_;
+    int MAX_CON_NUM;
 
     std::unique_ptr<EpollControl> epoller_;
     std::vector<epoll_event> aevent_;
+    std::map<int, HttpConn> users_;
   public:
 
     FollowProcess(
@@ -49,48 +52,59 @@ class FollowProcess{
       while(!isClose_){
         //尝试加锁
         int ret = flock(lock_fd_, LOCK_EX | LOCK_NB);
-        int nums = epoller_->epoll_wait(aevent_);
 
         //拿到锁
         if(ret != -1){        
-          for(int i = 0;i < nums;i++){
-            int fd = epoller_->GetEventFd(i);
-            if(fd == listen_fd){
-              deal_listen_();
-            }
-          }
+          deal_listen_();
           flock(lock_fd_, LOCK_UN);
         } else { // 未拿到锁
-           for(int i = 0;i < nums;i++){
-            int fd = epoller_->GetEventFd(i);
-            uint32_t events = epoller_->GetEvent(i);
-            if(fd == listen_fd){
-              continue;
-            }else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-                assert(users_.count(fd) > 0);
-                close_conn_(&users_[fd]);
-            }
-            else if(events & EPOLLIN) {
-                assert(users_.count(fd) > 0);
-                deal_read_(&users_[fd]);
-            }
-            else if(events & EPOLLOUT) {
-                assert(users_.count(fd) > 0);
-                deal_write_(&users_[fd]);
-            } else {
-                LOG_ERROR("Unexpected event");
-            }
-          }         
+          run_epoll_();
         }
 
       }
 
     }
 
-    void deal_listen_(){
-
+    void add_client_(int client_fd,struct sockaddr_in remote_addr){
+      
     }
 
+    void deal_listen_(){
+      struct sockaddr_in remote_addr;
+      socklen_t len = sizeof(remote_addr);
+      do{
+        int client_fd = accept(listen_fd,(struct sockaddr *)&remote_addr, &len);
+        if(client_fd < 0) return;
+        else if(users_.size() >= MAX_CON_NUM){
+          LOG_WARN("Clients is full!");
+          return;
+        }
+        add_client_(client_fd,remote_addr);
+      }while(true);
+    } 
+    void run_epoll_(){
+      int nums = epoller_->epoll_wait(aevent_);
+      for(int i = 0;i < nums;i++){
+        int fd = epoller_->GetEventFd(i);
+        uint32_t events = epoller_->GetEvent(i);
+        if(fd == listen_fd){
+          continue;
+        }else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
+            assert(users_.count(fd) > 0);
+            close_conn_(&users_[fd]);
+        }
+        else if(events & EPOLLIN) {
+            assert(users_.count(fd) > 0);
+            deal_read_(&users_[fd]);
+        }
+        else if(events & EPOLLOUT) {
+            assert(users_.count(fd) > 0);
+            deal_write_(&users_[fd]);
+        } else {
+            LOG_ERROR("Unexpected event");
+        }
+      }
+    }
     void close_conn_(){
 
     }

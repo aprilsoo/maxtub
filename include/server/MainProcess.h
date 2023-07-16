@@ -48,10 +48,6 @@ class MainProcess{
     const int shared_memory_size = sizeof(int);
     // 共享内存的key值
     const key_t shared_memory_key = 1234;
-    // 文件锁路径
-    const std::string file_lock_path = "/tmp/shared_data.lock";
-    // 信号量名称
-    const std::string semaphore_name = "/shared_semaphore";
     
     struct sockaddr_in sockaddr;
     
@@ -126,17 +122,21 @@ class MainProcess{
 
       // 初始化共享数据
       int* share_ = static_cast<int*>(shared_memory);
-      *share_ = -1;
+      *share_ = 0;
 
-      // 打开文件锁
-      int file_lock = open(file_lock_path.c_str(), O_CREAT | O_WRONLY, 0644);
-      if (file_lock == -1) {
-          std::cerr << "Failed to create file lock: " << strerror(errno) << std::endl;
-          return 1;
-      }
 
       // 创建并初始化信号量
-      sem_t* sem_read = sem_open(semaphore_name.c_str(), O_CREAT, 0644, 1);
+      sem_t* sem_read = sem_open("/read_semaphare", O_CREAT | O_EXCL, 0644, 1);
+      if (sem_read == SEM_FAILED) {
+          std::cerr << "Failed to create semaphore: " << strerror(errno) << std::endl;
+          return 1;
+      }
+      sem_t* sem_write = sem_open("/write_semaphare", O_CREAT | O_EXCL, 0644, 1);
+      if (sem_read == SEM_FAILED) {
+          std::cerr << "Failed to create semaphore: " << strerror(errno) << std::endl;
+          return 1;
+      }
+      sem_t* read_count = sem_open("/read_count", O_CREAT | O_EXCL, 0644, 0);
       if (sem_read == SEM_FAILED) {
           std::cerr << "Failed to create semaphore: " << strerror(errno) << std::endl;
           return 1;
@@ -158,7 +158,7 @@ class MainProcess{
         perror("error");
       } else if(pid == 0) {
         //子进程
-        follow_process_ptr_ = new FollowProcess(socket_fd, id, share_, sem_read, file_lock);
+        follow_process_ptr_ = new FollowProcess(socket_fd, id, shared_memory_id, sem_read, sem_write, read_count);
         follow_process_ptr_->follow_process_start();
       } else if(pid > 0) {
         //父进程        

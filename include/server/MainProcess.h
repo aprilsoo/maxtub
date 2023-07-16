@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:50
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-14 15:05:21
+ * @LastEditTime: 2023-07-16 19:11:03
  * @FilePath: /maxtub/include/server/MainProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -29,32 +29,36 @@ using namespace std;
 
 class MainProcess{
   private:
+  //工作进程节点
     struct Node{
-      int idx;
-      int *pos;
+      int id;
       int pid;
     };
     
-    int socket_fd;
-    char* path_;
+    //监听套接字
+    int socket_fd; 
+    //进程数
     int process_num;
+    //触发方式 ET/LT
     int trigger;
+    //协议IPV4/IPV6
     int socket_family;
+    //端口
     int port;
+    //TCP/UDP
     int protocol;
+    //ip地址
     char *ip;
-    FollowProcess *follow_process_ptr_;
+    //闲置连接时间限制
+    double time_limit;
     
-    string filename_ = "lockfile.txt";
-    
-    struct sockaddr_in sockaddr;
-    
-    vector<MainProcess::Node> addrs;
-    list<FollowProcess*> follows;
-    vector<pid_t> pids;
+    //锁
+    AcceptLock * lck;
 
-  public:
+    //工作线程管理
+    list<MainProcess::Node> follows;
     
+  public:
     enum TRIGGER{
       ET=0,
       LT
@@ -104,32 +108,13 @@ class MainProcess{
         return -1;
       }
 
-      int lock_fd = open(filename_.c_str(), O_RDWR | O_CREAT, 0644);
-      if (lock_fd == -1) {
-        std::cerr << "Failed to open file." << std::endl;
-        exit(-1);
+      if(create_follows() < 0){
+        close(socket_fd);
+        return -1;
       }
 
-      // 创建多进程
-      pid_t pid = -1;
-      int id = -1;
-      for(int i=0;i<process_num;i++){
-          id = i;
-          pid = fork();
-          if(pid <= 0) {
-            break;
-          }
-          pids.push_back(pid);
-      }
-
-      if(pid < 0){
-        perror("error");
-      } else if(pid == 0) {
-        //子进程
-        follow_process_ptr_ = new FollowProcess(socket_fd, id, lock_fd);
-        follow_process_ptr_->follow_process_start();
-      } else if(pid > 0) {
-        //父进程        
+      for(;;){
+        wait_sign();
       }
     }
 
@@ -154,6 +139,7 @@ class MainProcess{
     /// @brief bind
     /// @return 成功返回1 失败返回-1 
     int init_bind(){
+      struct sockaddr_in sockaddr;
       memset(&sockaddr,0,sizeof(sockaddr));
       sockaddr.sin_port = htons(port);
       sockaddr.sin_family = socket_family;
@@ -182,5 +168,17 @@ class MainProcess{
       return 1;
     }
 
+
+    /// @brief 创建工作进程
+    /// @return 失败返回-1 成功返回创建的进程数
+    int create_follows(){
+      
+    }
+
+    
+    /// @brief 接受信号
+    void wait_sign(){
+
+    }
 
 };

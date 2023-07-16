@@ -61,7 +61,7 @@ class EpollControl{
       return epoll_ctl(epoll_fd,op,fd,&ev);
     }
     
-    int epoll_wait(std::vector<epoll_event>& activeEvents,int timeout=10){
+    int epoll_wait(,int timeout=10){
 
     }
 

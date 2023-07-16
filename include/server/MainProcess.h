@@ -158,7 +158,7 @@ class MainProcess{
         perror("error");
       } else if(pid == 0) {
         //子进程
-        follow_process_ptr_ = new FollowProcess(socket_fd, id, shared_memory_id, sem_read, sem_write, read_count);
+        follow_process_ptr_ = new FollowProcess(socket_fd, id, shared_memory_id, sem_read, sem_write, read_count,process_num);
         follow_process_ptr_->follow_process_start();
       } else if(pid > 0) {
         //父进程        

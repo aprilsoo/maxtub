@@ -8,11 +8,18 @@
  */
 #pragma once
 
-#include<bits/stdc++.h>
 #include"server/FollowProcess.h"
 #include<sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/shm.h>
+#include <fcntl.h>
+#include <sys/ipc.h>
+#include <iostream>
+#include <sys/types.h>
+#include <string.h>
+#include <errno.h>
+#include <semaphore.h>
 
 #include"logger/Logger.h"
 
@@ -37,6 +44,14 @@ class MainProcess{
     int protocol;
     char *ip;
     FollowProcess *follow_process_ptr_;
+    // 共享内存大小
+    const int shared_memory_size = sizeof(int);
+    // 共享内存的key值
+    const key_t shared_memory_key = 1234;
+    // 文件锁路径
+    const std::string file_lock_path = "/tmp/shared_data.lock";
+    // 信号量名称
+    const std::string semaphore_name = "/shared_semaphore";
     
     struct sockaddr_in sockaddr;
     
@@ -95,13 +110,40 @@ class MainProcess{
         return -1;
       }
 
-      /// 共享内存
-      // int fd = open(share_file_, O_RDWR | O_CREAT, 00777);
-      // int len = lseek(fd, 0, SEEK_END);
-      int *share_ = (int *)mmap(NULL, sizeof(int32_t), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
-      share_[0] = -1;
-      /// 创建多进程
-      int pid = -1;
+      // 创建共享内存
+      int shared_memory_id = shmget(shared_memory_key, shared_memory_size, IPC_CREAT | 0666);
+      if (shared_memory_id == -1) {
+          std::cerr << "Failed to create shared memory: " << strerror(errno) << std::endl;
+          return 1;
+      }
+
+      // 连接共享内存
+      void* shared_memory = shmat(shared_memory_id, nullptr, 0);
+      if (shared_memory == (void*)-1) {
+          std::cerr << "Failed to attach shared memory: " << strerror(errno) << std::endl;
+          return 1;
+      }
+
+      // 初始化共享数据
+      int* share_ = static_cast<int*>(shared_memory);
+      *share_ = -1;
+
+      // 打开文件锁
+      int file_lock = open(file_lock_path.c_str(), O_CREAT | O_WRONLY, 0644);
+      if (file_lock == -1) {
+          std::cerr << "Failed to create file lock: " << strerror(errno) << std::endl;
+          return 1;
+      }
+
+      // 创建并初始化信号量
+      sem_t* sem_read = sem_open(semaphore_name.c_str(), O_CREAT, 0644, 1);
+      if (sem_read == SEM_FAILED) {
+          std::cerr << "Failed to create semaphore: " << strerror(errno) << std::endl;
+          return 1;
+      }
+
+      // 创建多进程
+      pid_t pid = -1;
       int id = -1;
       for(int i=0;i<process_num;i++){
           id = i;
@@ -116,7 +158,7 @@ class MainProcess{
         perror("error");
       } else if(pid == 0) {
         //子进程
-        follow_process_ptr_ = new FollowProcess(socket_fd, id, share_);
+        follow_process_ptr_ = new FollowProcess(socket_fd, id, share_, sem_read, file_lock);
         follow_process_ptr_->follow_process_start();
       } else if(pid > 0) {
         //父进程        

@@ -23,6 +23,8 @@ class FollowProcess{
     bool isClose_;
     int id_;
     int *share_addr;
+    
+
     std::unique_ptr<EpollControl> epoller_;
     std::vector<epoll_event> aevent_;
   public:
@@ -41,7 +43,7 @@ class FollowProcess{
 
     void follow_process_start(){
       uint32_t events = EPOLLIN;
-      epoller_->epoll_control(events,listen_fd,EPOLL_CTL_ADD);
+      epoller_->epoll_control(events,listen_fd,EPOLL_CTL_ADD);  
       // 读写锁
       while(!isClose_){
         // 抢锁

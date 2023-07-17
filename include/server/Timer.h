@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-17 15:17:05
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-17 16:20:58
+ * @LastEditTime: 2023-07-17 16:57:01
  * @FilePath: /maxtub/include/server/Timmer.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -19,6 +19,7 @@ class Timer{
   private:
     unordered_map<int,int> mp,rmp;
     struct itimerspec itimer;
+    struct itimerspec old_itimer;
     EpollControl *ep;
     long long time_limit;
   public:
@@ -81,6 +82,46 @@ class Timer{
       rmp.erase(fd);
     }
 
+    /// @brief 
+    /// @param fd 添加绑定的连接描述符
+    /// @param limit_t 纳秒
+    /// @return 成功返回定时器连接描述符 失败返回-1
+    int update_timer(int fd,long long limit_t){
+      if(!rmp.count(fd)){
+        return -1;
+      }
+      
+      int timer_fd = rmp[fd];
+      
+      itimer.it_value.tv_sec = 0;
+      itimer.it_value.tv_nsec = limit_t;
+
+      itimer.it_interval.tv_nsec = 0;
+      itimer.it_interval.tv_sec = 0;
+
+      if(timerfd_settime(timer_fd,0,&itimer,nullptr) == -1){
+        close(timer_fd);
+        LOG_ERROR("更新定时器设定事件失败");
+      }
+      
+      ep->del(timer_fd,0);
+
+      if(ep->add(timer_fd,EPOLLIN) == -1){
+        close(timer_fd);
+        LOG_ERROR("更新定时器添加epoll事件失败");
+      }
+
+      return timer_fd;
+    }
+
+    /// @brief 
+    /// @param fd 添加绑定的连接描述符
+    /// @return 成功返回定时器连接描述符 失败返回-1
+    int update_timer(int fd){
+      return update_timer(fd,time_limit);
+    }
+
+    
     /// @brief 
     /// @param fd 描述符
     /// @return 如果是定时器描述符 返回绑定的连接描述符 ，否则返回-1

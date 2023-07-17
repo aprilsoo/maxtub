@@ -17,7 +17,6 @@
 #include <sys/file.h>
 #include <ctime>
 #include "EpollControl.h"
-#include "HttpConn.h"
 #include "server/AcceptLock.h"
 #include "server/Timer.h"
 using namespace std;

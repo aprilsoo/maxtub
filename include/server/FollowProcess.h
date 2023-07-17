@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-17 14:47:07
+ * @LastEditTime: 2023-07-17 14:56:07
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -123,27 +123,35 @@ class FollowProcess{
         if(ret == -1){
           break;
         }
-        clients[ret] = make_unique<ClientData>(addr);
+        clients[ret] = make_unique<ClientData>(ret,addr);
         ep->add(ret,EPOLLIN);
       }
     }
 
     void deal_read(int fd){
       int ret = clients[fd] -> read();
-      if(ret == -2){
-        deal_close();
+      if(ret == -1){
+        deal_close(fd);
       }
-      else if(ret == 1){
-        ep->add(fd,)
+      else{
+        ep->add(fd,EPOLLOUT);
       }
     }
     
     void deal_send(int fd){
-      
+      int ret = clients[fd] -> send();
+      if(ret == -1){
+        deal_close(fd);
+      }
+      else{
+        ep->add(fd,EPOLLIN);
+      }
     }
 
     void deal_close(int fd){
       
+      clients.erase(fd);
+      close(fd);
     }
 };
 

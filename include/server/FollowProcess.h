@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-17 14:56:07
+ * @LastEditTime: 2023-07-17 16:35:45
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -19,7 +19,7 @@
 #include "EpollControl.h"
 #include "HttpConn.h"
 #include "server/AcceptLock.h"
-
+#include "server/Timer.h"
 using namespace std;
 
 
@@ -34,9 +34,11 @@ class FollowProcess{
     //触发方式 ET/LT
     static int trigger;
     //闲置连接时间限制
-    static double time_limit;
+    static long long time_limit;
+    //定时器
+    Timer * timer;
 
-    std::unique_ptr<EpollControl> ep;
+    EpollControl* ep;
 
     FollowProcess(){}
     ~FollowProcess(){}
@@ -59,7 +61,7 @@ class FollowProcess{
       AcceptLock *lck_,
       int listen_fd_,
       int id_,
-      double time_limit_,
+      long long time_limit_,
       int trigger_
     ){
       lck = lck_;
@@ -89,10 +91,12 @@ class FollowProcess{
 
     void follow_process_start(){
       //创建ep 最大返回数量10000
-      ep.reset(new EpollControl(10000));
-
+      ep = new EpollControl(10000,EPOLLET);
       struct epoll_event * evs;
 
+      //创建定时器
+      timer = new Timer(ep,time_limit);
+      
       for(;;){
         if(lck->lock()){
           add_client();
@@ -101,6 +105,17 @@ class FollowProcess{
 
         int num = ep->wait(evs,100);
         for(int i=0;i<num;++i){
+          int timer_fd = timer->find(evs[i].data.fd);
+          if(timer_fd != -1){
+            deal_close(evs[i].data.fd);
+            timer->del_timer(evs[i].data.fd);
+            continue;
+          }
+
+          if(!clients.count(evs[i].data.fd)){
+            continue;
+          }
+
           if(evs[i].events & EPOLLIN){
             deal_read(evs[i].data.fd);
           }
@@ -149,6 +164,7 @@ class FollowProcess{
     }
 
     void deal_close(int fd){
+      
       
       clients.erase(fd);
       close(fd);

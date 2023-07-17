@@ -16,8 +16,6 @@ class AcceptLock{
     int fd;
     //尝试锁信号量 = 1
     sem_t *sem_try;
-    //尝试创建信号量 = 1
-    sem_t *sem_create; 
 
     int create(){
       fd = open("lockfile.txt",O_RDWR | O_CREAT, 0644);

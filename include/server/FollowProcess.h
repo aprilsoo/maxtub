@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-16 19:49:22
+ * @LastEditTime: 2023-07-16 20:08:51
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -41,6 +41,7 @@ class FollowProcess{
 
     static FollowProcess* instance;
     
+    unordered_map<int,std::unique_ptr<ClientData> > clients;
   public:
     
     static FollowProcess * Instance(){
@@ -84,18 +85,32 @@ class FollowProcess{
     void follow_process_start(){
       //创建ep 最大返回数量10000
       ep.reset(new EpollControl(10000));
-      
+
       struct epoll_event * evs;
 
       for(;;){
         //抢锁
 
         int num = ep->wait(evs,100);
+        for(int i=0;i<num;++i){
+          //定时器
+
+          //关闭连接
+
+          
+        }
       }
     }
 
-    void add_client_(int client_fd,struct sockaddr_in remote_addr){
-      
+    int add_client_(){
+      sockaddr_in addr;
+      socklen_t len = sizeof(addr);
+      int ret = accept(listen_fd,(sockaddr*)&addr,&len);
+      if(ret == -1){
+        
+      }
+      clients[ret] 
+      return ret;
     }
 
     void deal_listen_(){

@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-16 20:08:51
+ * @LastEditTime: 2023-07-17 14:33:42
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -18,6 +18,10 @@
 #include <ctime>
 #include "EpollControl.h"
 #include "HttpConn.h"
+#include "server/AcceptLock.h"
+
+using namespace std;
+
 
 class FollowProcess{
   private:
@@ -73,6 +77,7 @@ class FollowProcess{
         return pid;
       }
       
+      
       follow_process_start();
 
       LOG_INFO("进程%d pid=%d 结束",id,getpid());
@@ -89,76 +94,50 @@ class FollowProcess{
       struct epoll_event * evs;
 
       for(;;){
-        //抢锁
+        if(lck->lock()){
+          add_client();
+          lck->unlock();
+        }
 
         int num = ep->wait(evs,100);
         for(int i=0;i<num;++i){
-          //定时器
-
-          //关闭连接
-
+          if(evs[i].events & EPOLLIN){
+            deal_read(evs[i].data.fd);
+          }
+          else if(evs[i].events & EPOLLOUT){
+            deal_send(evs[i].data.fd);
+          }
+          else if(evs[i].events & EPOLLHUP || evs[i].events & EPOLLRDHUP || evs[i].events  & EPOLLERR){
+            deal_close(evs[i].data.fd);
+          }
           
         }
       }
     }
 
-    int add_client_(){
-      sockaddr_in addr;
+    void add_client(){
+      struct sockaddr_in addr;
       socklen_t len = sizeof(addr);
-      int ret = accept(listen_fd,(sockaddr*)&addr,&len);
-      if(ret == -1){
-        
-      }
-      clients[ret] 
-      return ret;
-    }
-
-    void deal_listen_(){
-      struct sockaddr_in remote_addr;
-      socklen_t len = sizeof(remote_addr);
-      do{
-        int client_fd = accept(listen_fd,(struct sockaddr *)&remote_addr, &len);
-        if(client_fd < 0) return;
-        else if(users_.size() >= MAX_CON_NUM){
-          LOG_WARN("Clients is full!");
-          return;
+      for(;;){
+        int ret = accept(listen_fd,(struct sockaddr*)&addr,&len);
+        if(ret == -1){
+          break;
         }
-        add_client_(client_fd,remote_addr);
-      }while(true);
-    } 
-    void run_epoll_(){
-      int nums = epoller_->epoll_wait(aevent_);
-      for(int i = 0;i < nums;i++){
-        int fd = epoller_->GetEventFd(i);
-        uint32_t events = epoller_->GetEvent(i);
-        if(fd == listen_fd){
-          continue;
-        }else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-            assert(users_.count(fd) > 0);
-            close_conn_(&users_[fd]);
-        }
-        else if(events & EPOLLIN) {
-            assert(users_.count(fd) > 0);
-            deal_read_(&users_[fd]);
-        }
-        else if(events & EPOLLOUT) {
-            assert(users_.count(fd) > 0);
-            deal_write_(&users_[fd]);
-        } else {
-            LOG_ERROR("Unexpected event");
-        }
+        clients[ret] = make_unique<ClientData>(addr);
+        ep->add(ret,EPOLLIN);
       }
     }
-    void close_conn_(){
+
+    void deal_read(int fd){
 
     }
-
-    void deal_read_(){
-
+    
+    void deal_send(int fd){
+      
     }
 
-    void deal_write_(){
-
+    void deal_close(int fd){
+      
     }
 };
 

@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:50
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-16 19:31:28
+ * @LastEditTime: 2023-07-17 14:12:13
  * @FilePath: /maxtub/include/server/MainProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -22,6 +22,8 @@
 #include <semaphore.h>
 
 #include"logger/Logger.h"
+
+#include"server/AcceptLock.h"
 
 using namespace std;
 
@@ -172,6 +174,10 @@ class MainProcess{
     /// @brief 创建工作进程
     /// @return 失败返回-1 成功返回创建的进程数
     int create_follows(){
+      ///
+      lck = new AcceptLock();
+      lck->create();
+      ///
       for(int i=0;i<process_num;++i){
         int pid = FollowProcess::Instance()->create_follow_process(lck,socket_fd,i,time_limit,trigger);
         if(pid == -1){

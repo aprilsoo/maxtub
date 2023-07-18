@@ -19,6 +19,8 @@
 #include "EpollControl.h"
 #include "server/AcceptLock.h"
 #include "server/Timer.h"
+#include "ClientData.h"
+
 using namespace std;
 
 
@@ -157,7 +159,7 @@ class FollowProcess{
     
     void deal_send(int fd){
 
-      int ret = clients[fd] -> send();
+      int ret = clients[fd] -> write();
       if(ret == -1){
         deal_close(fd);
       }

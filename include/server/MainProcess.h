@@ -89,8 +89,6 @@ class MainProcess{
     protocol(protocol_),
     ip(ip_)
     {
-      path_ = getcwd(nullptr, 256);
-      assert(path_);
     }
     
     /// @brief 
@@ -176,7 +174,6 @@ class MainProcess{
     int create_follows(){
       ///
       lck = new AcceptLock();
-      lck->create();
       ///
       for(int i=0;i<process_num;++i){
         int pid = FollowProcess::Instance()->create_follow_process(lck,socket_fd,i,time_limit,trigger);

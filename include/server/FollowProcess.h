@@ -153,8 +153,21 @@ class FollowProcess{
         deal_close(fd);
       }
       else{
+        if(!HttpAnalysis()){
+          LOG_ERROR("解析失败,fd = %d",fd);
+          return;
+        }
         ep->add(fd,EPOLLOUT);
       }
+    }
+
+    /// @brief 解析
+    /// @return 成功1 失败0
+    bool HttpAnalysis(){
+      int t =1000;
+      while(t--){
+      }
+      return true;
     }
     
     void deal_send(int fd){

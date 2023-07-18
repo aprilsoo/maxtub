@@ -313,8 +313,8 @@ log4cpp/threading/DummyThreads.hh
 -
 
 /home/peace901/projects/maxtub/src/logger/Logger.cpp
-Logger.h
-/home/peace901/projects/maxtub/src/logger/Logger.h
+logger/Logger.h
+/home/peace901/projects/maxtub/src/logger/logger/Logger.h
 iostream
 -
 log4cpp/FileAppender.hh

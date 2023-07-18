@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-17 15:17:05
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-17 16:57:01
+ * @LastEditTime: 2023-07-18 15:23:47
  * @FilePath: /maxtub/include/server/Timmer.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -43,7 +43,7 @@ class Timer{
         LOG_ERROR("定时器创建失败");
         return -1;
       }
-      
+      LOG_DEBUG("%d",fd);
       itimer.it_value.tv_sec = 0;
       itimer.it_value.tv_nsec = limit_t;
 

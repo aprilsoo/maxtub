@@ -6,5 +6,5 @@ CXX_FLAGS =
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/peace901/projects/maxtub/include/logger -I/home/peace901/projects/maxtub/resources/log4c/include 
+CXX_INCLUDES = -I/home/peace901/projects/maxtub/include -I/home/peace901/projects/maxtub/resources/log4c/include 
 

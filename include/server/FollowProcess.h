@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-17 17:00:32
+ * @LastEditTime: 2023-07-18 15:32:03
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -37,28 +37,28 @@ class FollowProcess{
     //闲置连接时间限制
     static long long time_limit;
     //定时器
-    Timer * timer;
+    static Timer * timer;
 
-    EpollControl* ep;
-
-    FollowProcess(){}
-    ~FollowProcess(){}
+    static EpollControl* ep;
 
     static once_flag of;
 
     static FollowProcess* instance;
     
-    unordered_map<int,std::unique_ptr<ClientData> > clients;
+    static unordered_map<int,std::unique_ptr<ClientData> > clients;
+
+    FollowProcess(){}
+    ~FollowProcess(){}
   public:
     
     static FollowProcess * Instance(){
-      call_once(of,[&]{
-        instance = new FollowProcess();
-      });
+      // call_once(of,[&]{
+      //   instance = new FollowProcess();
+      // });
       return instance;
     }
     
-    pid_t create_follow_process(
+    static pid_t create_follow_process(
       AcceptLock *lck_,
       int listen_fd_,
       int id_,
@@ -90,7 +90,7 @@ class FollowProcess{
 
 
 
-    void follow_process_start(){
+    static void follow_process_start(){
       //创建ep 最大返回数量10000
       ep = new EpollControl(10000,EPOLLET);
       struct epoll_event * evs;
@@ -104,8 +104,7 @@ class FollowProcess{
           lck->unlock();
         }
 
-        int num = ep->wait(evs,10);
-        
+        int num = ep->wait(evs,100);
         
         for(int i=0;i<num;++i){
           int timer_fd = timer->find(evs[i].data.fd);
@@ -117,7 +116,7 @@ class FollowProcess{
           if(!clients.count(evs[i].data.fd)){
             continue;
           }
-
+          
           if(evs[i].events & EPOLLIN){
             deal_read(evs[i].data.fd);
           }
@@ -132,7 +131,7 @@ class FollowProcess{
       }
     }
 
-    void add_client(){
+    static void add_client(){
       struct sockaddr_in addr;
       socklen_t len = sizeof(addr);
       for(;;){
@@ -140,15 +139,17 @@ class FollowProcess{
         if(ret == -1){
           break;
         }
-        clients[ret] = make_unique<ClientData>(ret,addr);
+        clients[ret] = make_unique<ClientData>(ret,addr,ClientData::Status::ONCE_CONNECT);
         ep->add(ret,EPOLLIN);
-        timer->add_timer(ret);
+        //timer->add_timer(ret);
+        LOG_DEBUG("建立新连接pid = %d fd = %d",getpid(),ret);
       }
     }
 
-    void deal_read(int fd){
-      timer->update_timer(fd);
-      int ret = clients[fd] -> read();
+    static void deal_read(int fd){
+      LOG_DEBUG("fd = %d,deal_read",fd);
+      //timer->update_timer(fd);
+      int ret = clients[fd] -> client_read();
       if(ret == -1){
         deal_close(fd);
       }
@@ -157,22 +158,26 @@ class FollowProcess{
           LOG_ERROR("解析失败,fd = %d",fd);
           return;
         }
-        ep->add(fd,EPOLLOUT);
+        
+        if(ep->mod(fd,EPOLLOUT) == -1){
+          perror("epollout");
+          LOG_ERROR("add epollout事件失败");
+        }
       }
     }
 
     /// @brief 解析
     /// @return 成功1 失败0
-    bool HttpAnalysis(){
+    static bool HttpAnalysis(){
       int t =1000;
       while(t--){
       }
       return true;
     }
     
-    void deal_send(int fd){
-
-      int ret = clients[fd] -> write();
+    static void deal_send(int fd){
+      LOG_DEBUG("fd = %d,deal_send",fd);
+      int ret = clients[fd] -> client_write();
       if(ret == -1){
         deal_close(fd);
       }
@@ -181,13 +186,23 @@ class FollowProcess{
       }
     }
 
-    void deal_close(int fd){
-      
-      timer->del_timer(fd);
+    static void deal_close(int fd){
+      LOG_DEBUG("fd = %d,deal_close",fd);
+      //timer->del_timer(fd);
       clients.erase(fd);
       close(fd);
     }
 };
 
-static FollowProcess* instance = nullptr;
-static once_flag of;
+FollowProcess* FollowProcess::instance = nullptr;
+once_flag FollowProcess::of;
+
+int FollowProcess::listen_fd = -1;
+AcceptLock* FollowProcess::lck = nullptr;
+int FollowProcess::id = -1;
+int FollowProcess::trigger = -1;
+long long FollowProcess::time_limit = -1;
+Timer* FollowProcess::timer = nullptr;
+EpollControl* FollowProcess::ep = nullptr;
+unordered_map<int,std::unique_ptr<ClientData> > FollowProcess::clients;
+

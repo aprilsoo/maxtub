@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-14 13:34:46
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-17 14:32:32
+ * @LastEditTime: 2023-07-18 15:10:38
  * @FilePath: /maxtub/include/server/EpollControl.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AEpragmatic
  */
@@ -80,7 +80,7 @@ class EpollControl{
     /// @param evs_ 存evs的地址
     /// @param wait_time_limit wait返回的时间限制
     /// @return 
-    int wait(struct epoll_event* evs_,int wait_time_limit){
+    int wait(struct epoll_event* &evs_,int wait_time_limit){
       int num = epoll_wait(epoll_fd,evs,evs_num,wait_time_limit);
       evs_ = evs;
       return num;

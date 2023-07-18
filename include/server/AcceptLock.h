@@ -17,7 +17,7 @@ class AcceptLock{
     //尝试锁信号量 = 1
     sem_t *sem_try;
 
-    int create(){
+    void create(){
       fd = open("lockfile.txt",O_RDWR | O_CREAT, 0644);
       if(fd == -1){
         LOG_ERROR("锁文件创建失败");

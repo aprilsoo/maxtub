@@ -19,11 +19,14 @@
 #include <string.h>
 #include <errno.h>
 
+#include "logger/Logger.h"
+#include "Buffer.h"
+
 class ClientData{
   private:
     //缓冲
     Buffer * read_buf;
-    Buffer * send_buf;
+    Buffer * write_buf;
 
     //状态
     enum Status{
@@ -32,7 +35,7 @@ class ClientData{
     }status;
     
     int fd;
-    struct socketaddr_in addr;
+    struct sockaddr_in addr;
     char * ip;
     int port;
     bool isET;
@@ -42,7 +45,7 @@ class ClientData{
 
     ClientData(
       int fd_,
-      struct socketaddr_in addr_,
+      struct sockaddr_in addr_,
       Status status_
     )
     {

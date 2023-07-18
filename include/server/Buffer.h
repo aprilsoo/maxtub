@@ -46,6 +46,7 @@ class Buffer{
       return buffer_->size() - writePos_;
     }
 
+    /// @brief 从fd读到缓冲区
     int readFd(int fd){
       struct iovec iov[2];
       char buf[65535];
@@ -69,7 +70,18 @@ class Buffer{
       int len = write(fd,buffer_,readable());
       if(len == -1) return -1;
       readPos_ += len;
+      empty();
       return len;
+    }
+
+    /// @brief 判断是否为空，为空清空数组
+    /// @return 空=true 非空=false
+    bool empty(){
+      if(readable() == 0){
+        clear();
+        return true;
+      }
+      return false;
     }
 
 };

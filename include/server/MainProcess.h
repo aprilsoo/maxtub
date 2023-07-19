@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:50
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-19 13:06:53
+ * @LastEditTime: 2023-07-19 14:31:21
  * @FilePath: /maxtub/include/server/MainProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -53,10 +53,9 @@ class MainProcess{
     char *ip;
     //闲置连接时间限制
     long long time_limit;
-    
     //锁
-    AcceptLock * lck;
-
+    // AcceptLock * lck;
+    ListenLock * lck;
     //工作线程管理
     list<MainProcess::Node> follows;
     
@@ -175,7 +174,7 @@ class MainProcess{
     /// @return 失败返回-1 成功返回创建的进程数
     int create_follows(){
       ///
-      lck = new AcceptLock();
+      lck = new ListenLock();
       ///
       for(int i=0;i<process_num;++i){
         int pid = FollowProcess::Instance()->create_follow_process(lck,socket_fd,i,time_limit,trigger);

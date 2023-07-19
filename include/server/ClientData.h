@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-17 15:14:58
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-19 13:20:37
+ * @LastEditTime: 2023-07-19 13:40:27
  * @FilePath: /maxtub/include/server/ClientData.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -88,9 +88,9 @@ class ClientData{
     /// @brief 发送给客户端
     /// @return 剩余未写 = 0, 一次性连接写完 = -1， 常连接写完 = 0, 写入错误 = 0报错
     int client_write(){
-      char buf[] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 1234\r\n\r\n<!DOCTYPE html><html><head>    <title>Welcome to Example.com</title></head><body>    <h1>Hello, World!</h1></body></html>\r\n" ;
+      char buf[] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 113\r\n\r\n<!DOCTYPE html><html><head><title>Welcome to Example.com</title></head><body><h1>Hello, World!</h1></body></html>" ;
       int ret = write(fd,buf,strlen(buf)*sizeof(char));
-      return -1;
+      return 1;
       do{
         int len = write_buf->writeFd(fd);
         if(len == 0){

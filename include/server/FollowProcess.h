@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-19 13:17:32
+ * @LastEditTime: 2023-07-19 14:36:04
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -29,7 +29,8 @@ class FollowProcess{
     //监听套接字
     static int listen_fd;
     //锁
-    static AcceptLock * lck;
+    //static AcceptLock * lck;
+    static ListenLock * lck;
     //编号
     static int id;
     //触发方式 ET/LT
@@ -59,7 +60,8 @@ class FollowProcess{
     }
     
     static pid_t create_follow_process(
-      AcceptLock *lck_,
+      // AcceptLock *lck_,
+      ListenLock *lck_,
       int listen_fd_,
       int id_,
       long long time_limit_,
@@ -99,7 +101,7 @@ class FollowProcess{
       timer = new Timer(ep,time_limit);
       
       for(;;){
-        if(lck->lock()){
+        if(lck->lock() != -1){
           add_client();
           lck->unlock();
         }
@@ -107,10 +109,10 @@ class FollowProcess{
         int num = ep->wait(evs,100);
         
         for(int i=0;i<num;++i){
-          int timer_fd = timer->find(evs[i].data.fd);
-          if(timer_fd != -1){
-            LOG_DEBUG("定时器到时 fd = %d timerfd = %d",evs[i].data.fd,timer_fd);
-            deal_close(evs[i].data.fd);
+          int rec_fd = timer->find(evs[i].data.fd);
+          if(rec_fd != -1){
+            LOG_DEBUG("定时器到时 fd = %d rec_fd = %d",evs[i].data.fd,rec_fd);
+            deal_close(rec_fd);
             continue;
           }
 
@@ -203,7 +205,8 @@ FollowProcess* FollowProcess::instance = nullptr;
 once_flag FollowProcess::of;
 
 int FollowProcess::listen_fd = -1;
-AcceptLock* FollowProcess::lck = nullptr;
+// AcceptLock* FollowProcess::lck = nullptr;
+ListenLock * FollowProcess::lck = nullptr;
 int FollowProcess::id = -1;
 int FollowProcess::trigger = -1;
 long long FollowProcess::time_limit = -1;

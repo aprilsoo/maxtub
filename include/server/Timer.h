@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-17 15:17:05
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-19 13:15:36
+ * @LastEditTime: 2023-07-19 13:36:31
  * @FilePath: /maxtub/include/server/Timmer.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -67,7 +67,7 @@ class Timer{
 
       mp[timer_fd] = fd;
       rmp[fd] = timer_fd;
-
+      
       return timer_fd;
     }
 
@@ -99,8 +99,8 @@ class Timer{
       
       int timer_fd = rmp[fd];
       LOG_DEBUG("定时器更新 fd = %d timerfd = %d",fd,timer_fd);
-      itimer.it_value.tv_sec = 0;
-      itimer.it_value.tv_nsec = limit_t;
+      itimer.it_value.tv_sec = limit_t;
+      itimer.it_value.tv_nsec = 0;
 
       itimer.it_interval.tv_nsec = 0;
       itimer.it_interval.tv_sec = 0;

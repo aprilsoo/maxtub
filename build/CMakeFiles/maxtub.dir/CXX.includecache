@@ -404,9 +404,15 @@ log4cpp/threading/PThreads.hh
 log4cpp/threading/DummyThreads.hh
 -
 
-/home/peace901/projects/maxtub/src/main.cpp
+/home/hairly/projects/maxtub/src/main.cpp
 logger/Logger.h
+<<<<<<< HEAD
 /home/peace901/projects/maxtub/src/logger/Logger.h
 server/MainProcess.h
 /home/peace901/projects/maxtub/src/server/MainProcess.h
+=======
+/home/hairly/projects/maxtub/src/logger/Logger.h
+server/maxtub.h
+/home/hairly/projects/maxtub/src/server/maxtub.h
+>>>>>>> 9048676f232fa2c4de2506e99ac437d0be235d4a
 

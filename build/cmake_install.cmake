@@ -1,4 +1,4 @@
-# Install script for directory: /home/peace901/projects/maxtub
+# Install script for directory: /home/hairly/projects/maxtub
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/peace901/projects/maxtub/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/hairly/projects/maxtub/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

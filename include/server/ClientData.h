@@ -25,9 +25,6 @@
 
 class ClientData{
   private:
-    //缓冲
-    Buffer * read_buf;
-    Buffer * write_buf;
 
     char a[1005];
     int fd;
@@ -37,6 +34,10 @@ class ClientData{
     bool isET;
 
   public:
+
+    //缓冲
+    Buffer * read_buf;
+    Buffer * write_buf;
 
     //状态
     enum Status{
@@ -54,28 +55,21 @@ class ClientData{
       fd = fd_;
       addr = addr_;
       status = status_;
+      read_buf = new Buffer();
+      write_buf = new Buffer();
     }
 
     /// @brief 读到缓冲区
     /// @return -1表示读取数据失败；>0时，表示读出的字节数；等于0时，表示无数据可读
     int client_read(){
-      char ch[1005];
-      int len = read(fd,ch,1005);
-      LOG_INFO("%s",ch);
-      return len;
       int tot = 0;
       do{
         int len = read_buf->readFd(fd);
-        string str = "";
-        for(auto now : *read_buf->buffer_){
-          str += now;
-        }
-        LOG_INFO("%s",str.c_str());
         if(len == 0){
-          return -1;
+          break;
         }
         if(len == -1){
-          break;
+          return -1;
         }
         tot += len;
         
@@ -88,16 +82,16 @@ class ClientData{
     /// @brief 发送给客户端
     /// @return 剩余未写 = 0, 一次性连接写完 = -1， 常连接写完 = 0, 写入错误 = 0报错
     int client_write(){
-      char buf[] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 113\r\n\r\n<!DOCTYPE html><html><head><title>Welcome to Example.com</title></head><body><h1>Hello, World!</h1></body></html>" ;
-      int ret = write(fd,buf,strlen(buf)*sizeof(char));
-      return 1;
       do{
         int len = write_buf->writeFd(fd);
+        string s;
+        for(auto ch:write_buf->buffer_){
+          s += ch;
+        }
         if(len == 0){
           break;
         }
         if(len == -1){
-          LOG_ERROR("写入错误,fd = %d",fd);
           break;
         }
       }while(!write_buf->empty());

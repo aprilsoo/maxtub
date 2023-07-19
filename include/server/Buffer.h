@@ -30,16 +30,25 @@ class Buffer{
     std::atomic<std::size_t> writePos_;
 
   public:
-  std::vector<char> *buffer_;
+
+    std::vector<char> buffer_;
     Buffer(
-      int size = 1000
-    )
+      int size = 10000
+    ):buffer_(size)
     {
 
-      buffer_ = new std::vector<char>(size);
       readPos_ = 0;
       writePos_ = 0;
 
+    }
+
+    void append_(char *str){
+      int len = strlen(str);
+      if(writeable() < len){
+        buffer_.resize(buffer_.size() + len - writeable() + 1);
+      }
+      std::copy(str, str + len, begin_ptr() + writePos_);
+      writePos_ += strlen(str);
     }
 
     void clear(){
@@ -52,7 +61,11 @@ class Buffer{
     }
 
     int writeable(){
-      return buffer_->size() - writePos_;
+      return buffer_.size() - writePos_;
+    }
+
+    char* begin_ptr(){
+      return &*buffer_.begin();
     }
 
     /// @brief 从fd读到缓冲区
@@ -60,7 +73,7 @@ class Buffer{
       struct iovec iov[2];
       char buf[65535];
       int write_able = writeable();
-      iov[0].iov_base = buffer_ + writePos_;
+      iov[0].iov_base = begin_ptr() + writePos_;
       iov[0].iov_len = writeable();
       iov[1].iov_base = buf;
       iov[1].iov_len = sizeof(buf);
@@ -68,7 +81,7 @@ class Buffer{
       int len = readv(fd,iov,2);
       if(len == -1) return -1;
       if(len > write_able){
-        buffer_->insert(buffer_->end(),buf,buf+(len-write_able));
+        buffer_.insert(buffer_.end(),buf,buf+(len-write_able));
       }
 
       writePos_ += len;
@@ -76,7 +89,7 @@ class Buffer{
     }
 
     int writeFd(int fd){
-      int len = write(fd,buffer_,readable());
+      int len = write(fd,begin_ptr()+readPos_,readable());
       if(len == -1) return -1;
       readPos_ += len;
       empty();

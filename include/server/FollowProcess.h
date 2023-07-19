@@ -162,7 +162,7 @@ class FollowProcess{
         deal_close(fd);
       }
       else{
-        if(!HttpAnalysis()){
+        if(!HttpAnalysis(fd)){
           LOG_ERROR("解析失败,fd = %d",fd);
           return;
         }
@@ -175,7 +175,9 @@ class FollowProcess{
 
     /// @brief 解析
     /// @return 成功1 失败0
-    static bool HttpAnalysis(){
+    static bool HttpAnalysis(int fd){
+      char s[] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 113\r\n\r\n<!DOCTYPE html><html><head><title>Welcome to Example.com</title></head><body><h1>Hello, World!</h1></body></html>";
+      clients[fd]->write_buf->append_(s);
       int t =1000;
       while(t--){
       }

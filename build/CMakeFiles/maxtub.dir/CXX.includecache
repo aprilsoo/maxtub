@@ -6,6 +6,18 @@
 
 #IncludeRegexTransform: 
 
+../include/config/config.h
+iostream
+-
+fstream
+-
+map
+-
+string
+-
+sstream
+-
+
 ../include/logger/Logger.h
 string
 -
@@ -177,6 +189,8 @@ logger/Logger.h
 ../include/server/logger/Logger.h
 server/AcceptLock.h
 ../include/server/server/AcceptLock.h
+config/config.h
+../include/server/config/config.h
 
 ../include/server/Timer.h
 bits/stdc++.h
@@ -189,14 +203,6 @@ sys/time.h
 -
 unistd.h
 -
-
-../include/server/maxtub.h
-sys/types.h
--
-server/MainProcess.h
-../include/server/server/MainProcess.h
-server/FollowProcess.h
-../include/server/server/FollowProcess.h
 
 ../resources/log4c/include/log4cpp/Appender.hh
 log4cpp/Portability.hh
@@ -401,6 +407,6 @@ log4cpp/threading/DummyThreads.hh
 /home/peace901/projects/maxtub/src/main.cpp
 logger/Logger.h
 /home/peace901/projects/maxtub/src/logger/Logger.h
-server/maxtub.h
-/home/peace901/projects/maxtub/src/server/maxtub.h
+server/MainProcess.h
+/home/peace901/projects/maxtub/src/server/MainProcess.h
 

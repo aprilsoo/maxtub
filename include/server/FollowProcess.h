@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-19 14:36:04
+ * @LastEditTime: 2023-07-19 16:56:14
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -46,7 +46,7 @@ class FollowProcess{
 
     static FollowProcess* instance;
     
-    static unordered_map<int,std::unique_ptr<ClientData> > clients;
+    static map<int,std::unique_ptr<ClientData> > clients;
 
     FollowProcess(){}
     ~FollowProcess(){}
@@ -82,9 +82,10 @@ class FollowProcess{
         return pid;
       }
       
+      signal(SIGUSR1,drop);
       
       follow_process_start();
-
+  
       LOG_INFO("进程%d pid=%d 结束",id,getpid());
       exit(0);
       return 0;
@@ -199,6 +200,22 @@ class FollowProcess{
       clients.erase(fd);
       close(fd);
     }
+
+    static void deal_close_elegant(int fd){
+      LOG_DEBUG("fd = %d,deal_close",fd);
+      timer->del_timer(fd);
+      clients.erase(fd);
+      close(fd);
+    }
+
+    static void drop(int signum){
+      LOG_INFO("进程id = %d pid = %d 关闭-start",id,getpid());
+      for(auto &client : clients){
+        deal_close_elegant(client.first);
+      }
+      LOG_INFO("进程id = %d pid = %d 关闭",id,getpid());
+      exit(0);
+    }
 };
 
 FollowProcess* FollowProcess::instance = nullptr;
@@ -212,5 +229,5 @@ int FollowProcess::trigger = -1;
 long long FollowProcess::time_limit = -1;
 Timer* FollowProcess::timer = nullptr;
 EpollControl* FollowProcess::ep = nullptr;
-unordered_map<int,std::unique_ptr<ClientData> > FollowProcess::clients;
+map<int,std::unique_ptr<ClientData> > FollowProcess::clients;
 

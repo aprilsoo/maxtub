@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:50
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-19 14:31:21
+ * @LastEditTime: 2023-07-19 20:21:38
  * @FilePath: /maxtub/include/server/MainProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -24,6 +24,8 @@
 #include"logger/Logger.h"
 
 #include"server/AcceptLock.h"
+
+#include "config/config.h"
 
 using namespace std;
 
@@ -50,7 +52,7 @@ class MainProcess{
     //TCP/UDP
     int protocol;
     //ip地址
-    char *ip;
+    char ip[20];
     //闲置连接时间限制
     long long time_limit;
     //锁
@@ -59,6 +61,8 @@ class MainProcess{
     //工作线程管理
     list<MainProcess::Node> follows;
     
+    string maxtub_conf_pwd;
+    string log_conf_pwd;
   public:
     enum TRIGGER{
       ET=0,
@@ -73,25 +77,49 @@ class MainProcess{
       UDP=SOCK_DGRAM
     };
     
-    MainProcess(
-      int process_num_,
-      int trigger_,
-      int socket_family_,
-      int port_,
-      int protocol_,
-      char *ip_,
-      long long time_limit_
-    ):
-    process_num(process_num_),
-    trigger(trigger_),
-    socket_family(socket_family_),
-    port(port_),
-    protocol(protocol_),
-    ip(ip_),
-    time_limit(time_limit_)
-    {
+    MainProcess(string maxtub_conf_pwd_,string log_conf_pwd_){
+      log_conf_pwd = log_conf_pwd_;
+      maxtub_conf_pwd = maxtub_conf_pwd_;
+      if(!Logger::instance()->init(log_conf_pwd)){
+          fprintf(stderr,"日志打开失败\n");
+      }
+      LOG_DEBUG("日志打开");
+
+      read_conf(maxtub_conf_pwd);
     }
     
+    void read_conf(string maxtub_conf_pwd){
+      Config conf(maxtub_conf_pwd);
+      
+      string process_num_str = conf.Read<string>("process.num","1");
+      string ip_str = conf.Read<string>("ip","0,0,0,0");
+      string trigger_str = conf.Read<string>("trigger","ET");
+      string family_str = conf.Read<string>("family","IPV4");
+      string protocol_str = conf.Read<string>("protocol","TCP");
+      string port_str = conf.Read<string>("port","8000");
+      string time_limit_str = conf.Read<string>("time_limit_s","10");
+
+      //IP
+      for(int i=0;i<ip_str.size();++i) ip[i] = ip_str[i];
+      ip[ip_str.size()]='\0';
+
+      if(family_str == "IPV4") socket_family = MainProcess::IPV4;
+      else if(family_str == "IPV6") socket_family = MainProcess::IPV6;
+
+      if(trigger_str == "ET") trigger = MainProcess::ET;
+      else if(trigger_str == "LT") trigger = MainProcess::LT;
+      
+      if(protocol_str == "TCP") protocol = MainProcess::TCP;
+      else if(protocol_str == "UDP") protocol = MainProcess::UDP;
+
+      port = stoi(port_str);
+
+      time_limit = stoll(time_limit_str);
+
+      process_num = stoi(process_num_str);
+    }
+
+
     /// @brief 
     /// @return 成功返回1 失败返回-1 
     int start(){
@@ -108,15 +136,16 @@ class MainProcess{
         close(socket_fd);
         return -1;
       }
-
+      LOG_INFO("主进程 pid = %d",getpid());
       if(create_follows() < 0){
         close(socket_fd);
         return -1;
       }
 
-      for(;;){
-        wait_sign();
+      while(1){
+
       }
+      
     }
 
     /// @brief 创建socket_fd
@@ -152,7 +181,7 @@ class MainProcess{
 
       ok = bind(socket_fd,(struct sockaddr*)&sockaddr,sizeof(sockaddr));
       if(ok < 0){
-        LOG_ERROR("bind失败");
+        LOG_ERROR("bind失败 %s",strerror(errno));
         return -1;
       }
 
@@ -187,10 +216,19 @@ class MainProcess{
       return follows.size();
     }
 
-    
-    /// @brief 接受信号
-    void wait_sign(){
+    void hot_deployment(){
+      int rec = follows.size();
+      read_conf(maxtub_conf_pwd);
+      if(start() == -1){
+        LOG_ERROR("热部署失败");
+      }
 
+      for(int i=0;i<rec;++i){
+        int pid = follows.front().pid;
+        follows.pop_front();
+        kill(pid,SIGUSR1);
+      }
     }
 
+    
 };

@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/peace901/projects/maxtub/src/logger/Logger.cpp" "/home/peace901/projects/maxtub/build/CMakeFiles/logger.dir/src/logger/Logger.cpp.o"
+  "/home/hairly/projects/maxtub/src/logger/Logger.cpp" "/home/hairly/projects/maxtub/build/CMakeFiles/logger.dir/src/logger/Logger.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

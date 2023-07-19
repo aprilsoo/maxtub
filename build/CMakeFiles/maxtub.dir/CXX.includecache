@@ -398,9 +398,9 @@ log4cpp/threading/PThreads.hh
 log4cpp/threading/DummyThreads.hh
 -
 
-/home/peace901/projects/maxtub/src/main.cpp
+/home/hairly/projects/maxtub/src/main.cpp
 logger/Logger.h
-/home/peace901/projects/maxtub/src/logger/Logger.h
+/home/hairly/projects/maxtub/src/logger/Logger.h
 server/maxtub.h
-/home/peace901/projects/maxtub/src/server/maxtub.h
+/home/hairly/projects/maxtub/src/server/maxtub.h
 

@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:49:38
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-18 15:46:49
+ * @LastEditTime: 2023-07-19 13:18:12
  * @FilePath: /maxtub/include/server/maxtub.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -38,14 +38,15 @@ class maxtub{
 
     int open(){
       LOG_DEBUG("open");
-      char ip[] = "172.21.32.85";
+      char ip[] = "172.21.46.250";
       auto mainprocess = new MainProcess(
-        16,
+        20,
         MainProcess::ET,
         MainProcess::IPV4,
         8000,
         MainProcess::TCP,
-        ip
+        ip,
+        4
       );
       
       return mainprocess->start();

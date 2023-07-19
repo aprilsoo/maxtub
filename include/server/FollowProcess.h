@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-18 15:32:03
+ * @LastEditTime: 2023-07-19 13:17:32
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -52,9 +52,9 @@ class FollowProcess{
   public:
     
     static FollowProcess * Instance(){
-      // call_once(of,[&]{
-      //   instance = new FollowProcess();
-      // });
+      call_once(of,[&]{
+        instance = new FollowProcess();
+      });
       return instance;
     }
     
@@ -109,6 +109,7 @@ class FollowProcess{
         for(int i=0;i<num;++i){
           int timer_fd = timer->find(evs[i].data.fd);
           if(timer_fd != -1){
+            LOG_DEBUG("定时器到时 fd = %d timerfd = %d",evs[i].data.fd,timer_fd);
             deal_close(evs[i].data.fd);
             continue;
           }
@@ -141,14 +142,19 @@ class FollowProcess{
         }
         clients[ret] = make_unique<ClientData>(ret,addr,ClientData::Status::ONCE_CONNECT);
         ep->add(ret,EPOLLIN);
-        //timer->add_timer(ret);
-        LOG_DEBUG("建立新连接pid = %d fd = %d",getpid(),ret);
+        
+        // if(ret > 1024){
+        //   LOG_ERROR("fd = %d ",ret);
+        // }
+        LOG_INFO("建立新连接pid = %d fd = %d",getpid(),ret);
+
+        timer->add_timer(ret);
       }
     }
 
     static void deal_read(int fd){
       LOG_DEBUG("fd = %d,deal_read",fd);
-      //timer->update_timer(fd);
+      timer->update_timer(fd);
       int ret = clients[fd] -> client_read();
       if(ret == -1){
         deal_close(fd);
@@ -160,8 +166,7 @@ class FollowProcess{
         }
         
         if(ep->mod(fd,EPOLLOUT) == -1){
-          perror("epollout");
-          LOG_ERROR("add epollout事件失败");
+          LOG_ERROR("add epollout事件失败 %s",strerror(errno));
         }
       }
     }
@@ -188,7 +193,7 @@ class FollowProcess{
 
     static void deal_close(int fd){
       LOG_DEBUG("fd = %d,deal_close",fd);
-      //timer->del_timer(fd);
+      timer->del_timer(fd);
       clients.erase(fd);
       close(fd);
     }

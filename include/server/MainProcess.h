@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:50
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-17 14:12:13
+ * @LastEditTime: 2023-07-19 13:06:53
  * @FilePath: /maxtub/include/server/MainProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -52,7 +52,7 @@ class MainProcess{
     //ip地址
     char *ip;
     //闲置连接时间限制
-    double time_limit;
+    long long time_limit;
     
     //锁
     AcceptLock * lck;
@@ -80,14 +80,16 @@ class MainProcess{
       int socket_family_,
       int port_,
       int protocol_,
-      char *ip_
+      char *ip_,
+      long long time_limit_
     ):
     process_num(process_num_),
     trigger(trigger_),
     socket_family(socket_family_),
     port(port_),
     protocol(protocol_),
-    ip(ip_)
+    ip(ip_),
+    time_limit(time_limit_)
     {
     }
     

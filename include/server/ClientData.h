@@ -26,7 +26,7 @@
 class ClientData{
   private:
 
-    char a[1005];
+    char a[65536];
     int fd;
     struct sockaddr_in addr;
     char * ip;

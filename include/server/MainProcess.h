@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:50
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-19 20:21:38
+ * @LastEditTime: 2023-07-20 15:12:18
  * @FilePath: /maxtub/include/server/MainProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -26,7 +26,12 @@
 #include"server/AcceptLock.h"
 
 #include "config/config.h"
-
+#include <sys/types.h>
+#include <sys/wait.h> 
+#include <unistd.h> 
+#include <stdlib.h>
+ #include <stdlib.h> 
+#include <stdio.h> 
 using namespace std;
 
 
@@ -141,11 +146,7 @@ class MainProcess{
         close(socket_fd);
         return -1;
       }
-
-      while(1){
-
-      }
-      
+      return 1;
     }
 
     /// @brief 创建socket_fd
@@ -161,7 +162,7 @@ class MainProcess{
       fcntl(socket_fd,F_SETFL,flags|O_NONBLOCK);
 
       int opt = 1;
-      setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+      setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR|SO_REUSEPORT, &opt, sizeof(opt));
 
       return socket_fd;
     }
@@ -222,13 +223,22 @@ class MainProcess{
       if(start() == -1){
         LOG_ERROR("热部署失败");
       }
-
       for(int i=0;i<rec;++i){
         int pid = follows.front().pid;
         follows.pop_front();
         kill(pid,SIGUSR1);
+        wait(nullptr);
       }
     }
 
+    void Close(){
+      int rec = follows.size();
+      for(int i=0;i<rec;++i){
+        int pid = follows.front().pid;
+        follows.pop_front();
+        kill(pid,SIGUSR1);
+        wait(nullptr);
+      }
+    }
     
 };

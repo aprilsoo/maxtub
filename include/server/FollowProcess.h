@@ -2,7 +2,7 @@
  * @Author: peace901 443257245@qq.com
  * @Date: 2023-07-12 14:57:59
  * @LastEditors: peace901 443257245@qq.com
- * @LastEditTime: 2023-07-19 16:56:14
+ * @LastEditTime: 2023-07-20 15:03:44
  * @FilePath: /maxtub/include/server/FollowProcess.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -146,9 +146,7 @@ class FollowProcess{
         clients[ret] = make_unique<ClientData>(ret,addr,ClientData::Status::ONCE_CONNECT);
         ep->add(ret,EPOLLIN);
         
-        // if(ret > 1024){
-        //   LOG_ERROR("fd = %d ",ret);
-        // }
+       
         LOG_INFO("建立新连接pid = %d fd = %d",getpid(),ret);
 
         timer->add_timer(ret);
@@ -156,7 +154,7 @@ class FollowProcess{
     }
 
     static void deal_read(int fd){
-      LOG_DEBUG("fd = %d,deal_read",fd);
+      LOG_INFO("fd = %d,deal_read",fd);
       timer->update_timer(fd);
       int ret = clients[fd] -> client_read();
       if(ret == -1){
@@ -179,15 +177,13 @@ class FollowProcess{
     static bool HttpAnalysis(int fd){
       char s[] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 113\r\n\r\n<!DOCTYPE html><html><head><title>Welcome to Example.com</title></head><body><h1>Hello, World!</h1></body></html>";
       clients[fd]->write_buf->append_(s);
-      int t =1000;
-      while(t--){
-      }
       return true;
     }
     
     static void deal_send(int fd){
       LOG_DEBUG("fd = %d,deal_send",fd);
       int ret = clients[fd] -> client_write();
+    
       if(ret == -1){
         deal_close(fd);
       }
@@ -211,7 +207,6 @@ class FollowProcess{
     }
 
     static void drop(int signum){
-      LOG_INFO("进程id = %d pid = %d 关闭-start",id,getpid());
       for(auto &client : clients){
         deal_close_elegant(client.first);
       }

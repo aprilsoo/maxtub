@@ -1,1 +1,0 @@
-/usr/bin/c++     CMakeFiles/maxtub.dir/src/main.cpp.o  -o maxtub  liblogger.a ../resources/log4c/lib/liblog4cpp.a -lpthread 
